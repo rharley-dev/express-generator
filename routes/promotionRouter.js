@@ -9,40 +9,50 @@ promotionRouter.use(bodyParser.json());
 
 promotionRouter
   .route("/")
-  //chaining methods to the root path
-  // Routing method catch-all for HTTP verbs
-  .all((req, res, next) => {
-    res.statusCode = 200;
-    res.setHeader("Content-Type", "text/plain");
-    next(); // Passes control of routing to the next relevent method below
+  .get((req, res, next) => {
+    Promotion.find()
+      .then(promotions => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(promotions); // send json data to client and close res stream
+      })
+      .catch(err => next(err));
   })
-  .get((req, res) => {
-    res.end("Will send all the promotions to you");
-  })
-  .post((req, res) => {
-    res.end(
-      `Will add the campsite: ${req.body.name} with description: ${req.body.description}`
-    );
+  .post((req, res, next) => {
+    Promotion.create(req.body) // auto saves doc and creates a promise, (req.body) body parcer middleware
+      .then(promotion => {
+        console.log('Promotion Created ', promotion);
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(promotion);
+      })
+      .catch(err => next(err));
   })
   .put((req, res) => {
     res.statusCode = 403;
-    res.end("PUT operation not supported on /promotions");
+    res.end('PUT operation not supported on /promotions');
   })
-  .delete((req, res) => {
-    res.end("Deleting all promotions");
+  .delete((req, res, next) => {
+    Promotion.deleteMany()
+      .then(response => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(response);
+      })
+      .catch(err => next(err));
   });
+
 // Adding a route param to the end of the path (allows to store what the client sends as a part of the path as a route param)
 promotionRouter
   .route("/:promotionId")
-  .all((req, res, next) => {
-    res.statusCode = 200;
-    res.setHeader("Content-Type", "text/plain");
-    next(); // Passes control of routing to the next relevent method below
-  })
-  .get((req, res) => {
-    res.end(
-      `Will send details of the promotion: ${req.params.promotionId} to you`
-    );
+  .get((req, res, next) => {
+    Promotion.findById(req.params.promotionId)
+      .then(promotion => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(promotion);
+      })
+      .catch(err => next(err));
   })
   .post((req, res) => {
     res.statusCode = 403;
@@ -50,13 +60,29 @@ promotionRouter
       `POST operation not supported on /promotions/${req.params.promotionId}`
     );
   })
-  .put((req, res) => {
-    res.write(`Updating the promotion: ${req.params.promotionId}\n`);
-    res.end(`Will update the promotion: ${req.body.name}
-      with description: ${req.body.description}`);
+  .put((req, res, next) => {
+    Promotion.findByIdAndUpdate(
+      req.params.promotionId,
+      {
+        $set: req.body,
+      },
+      { new: true }
+    )
+      .then(promotion => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(promotion);
+      })
+      .catch(err => next(err));
   })
-  .delete((req, res) => {
-    res.end(`Deleting promotion: ${req.params.promotionId}`);
+  .delete((req, res, next) => {
+    Promotion.findByIdAndDelete(req.params.promotionId)
+      .then(response => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(response);
+      })
+      .catch(err => next(err));
   });
 
 module.exports = promotionRouter;
