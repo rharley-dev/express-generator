@@ -1,7 +1,10 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const partnerSchema = new Schema(
+require('mongoose-currency').loadType(mongoose); // load the new currency type into mongoose to be used in schema's
+const Currency = mongoose.Types.Currency;
+
+const promotionSchema = new Schema(
   {
     name: {
       type: String,
@@ -20,12 +23,17 @@ const partnerSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    cost: {
+      type: Currency,
+      required: true,
+      min: 0,
+    },
   },
   {
     timestamps: true, // auto add two properties (created at: and updated at: )
   }
 );
 
-const Partner = mongoose.model('Partner', partnerSchema); // returns a constructor function, similar to classes
+const Promotion = mongoose.model('Promotion', promotionSchema); // returns a constructor function, similar to classes
 
-module.exports = Partner;
+module.exports = Promotion;
