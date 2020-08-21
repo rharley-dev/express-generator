@@ -41,14 +41,15 @@ app.use(
   session({
     name: 'session-id',
     secret: '12345-67890-09876-54321',
-    saveUninitialized: false,
-    resave: false,
-    store: new FileStore(),
+    saveUninitialized: false, // when a new session is created with no updates, it won't be saved to prevent empty session files
+    resave: false, // when session is created, it will continue to be resaved when a req is made.  Helps mark session as active, so it doesn't get deleted while the user is making req
+    store: new FileStore(), // saves to filestore on the server's hard disk, instead of the running app's memory
   })
 );
 
 function auth(req, res, next) {
-  if (!req.signedCookies.user) {
+  console.log(req.session);
+  if (!req.session.user) {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
       const err = new Error('You are not authenticated!');
@@ -63,7 +64,7 @@ function auth(req, res, next) {
     const user = auth[0];
     const pass = auth[1];
     if (user === 'admin' && pass === 'password') {
-      res.cookie('user', 'admin', { signed: true });
+      req.session.user = 'admin';
       return next(); // authorized
     } else {
       const err = new Error('You are not authenticated!');
@@ -72,7 +73,7 @@ function auth(req, res, next) {
       return next(err);
     }
   } else {
-    if (req.signedCookies.user === 'admin') {
+    if (req.session.user === 'admin') {
       return next();
     } else {
       const err = new Error('You are not authenticated!');
