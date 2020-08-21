@@ -1,6 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const Partner = require('../models/parnter');
+const Partner = require('../models/partner');
 
 const partnerRouter = express.Router();
 
@@ -41,7 +41,7 @@ partnerRouter
       })
       .catch(err => next(err));
   });
-  
+
 // Adding a route param to the end of the path (allows to store what the client sends as a part of the path as a route param)
 partnerRouter
   .route('/:partnerId')
