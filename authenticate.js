@@ -43,5 +43,7 @@ exports.jwtPassport = passport.use(
   )
 );
 
+
+
 // shortcut for authenticating with JWT
 exports.verifyUser = passport.authenticate('jwt', { session: false });
