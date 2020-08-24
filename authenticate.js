@@ -4,6 +4,7 @@ const User = require('./models/user');
 const JwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
 const jwt = require('jsonwebtoken'); // used to create, sign, and verify tokens
+const FacebookTokenStrategy = require('passport-facebook-token');
 
 const config = require('./config.js');
 const { NotExtended } = require('http-errors');
@@ -24,7 +25,7 @@ opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
 // option that lets us supply the JWT with a key signed as token and setting that to the config.secretKey in config.js
 opts.secretOrKey = config.secretKey;
 
-// exporting JWT strategy
+// exporting Json Web Token strategy
 exports.jwtPassport = passport.use(
   new JwtStrategy( // new JWT constructor
     opts, // object with config options
@@ -56,3 +57,39 @@ exports.verifyAdmin = (req, res, next) => {
     return next(err);
   }
 };
+
+exports.facebookPassport = passport.use(
+  new FacebookTokenStrategy(
+    {
+      // client settings from the config module
+      clientID: config.facebook.clientId,
+      clientSecret: config.facebook.clientSecret,
+    },
+    // profile object is from facebook about the user info
+    (accessToken, refreshToken, profile, done) => {
+      User.findOne({ facebookId: profile.id }, (err, user) => {
+        if (err) {
+          return done(err, false); // second argument false = for no user was found
+        }
+        if (!err && user) {
+          return done(null, user); // argument for no error and user doc to load to the req obj
+        } else {
+          // fb user doc could not be found and there is no error
+          // creating new user doc
+          user = new User({ username: profile.displayName });
+          user.facebookId = profile.id;
+          user.firstname = profile.name.givenName; // mapping preset fb property names
+          user.lastname = profile.name.familyName; // mapping preset fb property names
+          // to save doc to mongodb db .save
+          user.save((err, user) => {
+            if (err) {
+              return done(err, false);
+            } else {
+              return done(null, user);
+            }
+          });
+        }
+      });
+    }
+  )
+);
