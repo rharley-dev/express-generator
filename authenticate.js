@@ -6,6 +6,7 @@ const ExtractJwt = require('passport-jwt').ExtractJwt;
 const jwt = require('jsonwebtoken'); // used to create, sign, and verify tokens
 
 const config = require('./config.js');
+const { NotExtended } = require('http-errors');
 
 // .use to specify the LocalStrategy and the varified callback function User.authenticate()
 exports.local = passport.use(new LocalStrategy(User.authenticate()));
@@ -43,7 +44,15 @@ exports.jwtPassport = passport.use(
   )
 );
 
-
-
 // shortcut for authenticating with JWT
 exports.verifyUser = passport.authenticate('jwt', { session: false });
+
+exports.verifyAdmin = (req, res, next) => {
+  if (req.user.admin) {
+    return next();
+  } else {
+    err = new Error('You are not authorized to perform this operation!');
+    err.status = 403;
+    return next(err);
+  }
+};

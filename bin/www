@@ -8,12 +8,18 @@ var app = require('../app');
 var debug = require('debug')('nucampsiteserver:server');
 var http = require('http');
 
+const https = require('https');
+const fs = require('fs');
+
 /**
  * Get port from environment and store in Express.
  */
 
+// standard HTTP server runs on port 80 and HTTPS port 443
 var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
+// app.set is an easy way to set a variable that can be accessed anywhere in express app using app.get
+app.set('secPort', port + 443); // port 3443
 
 /**
  * Create HTTP server.
@@ -28,6 +34,28 @@ var server = http.createServer(app);
 server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
+
+/**
+ * Create HTTPS server.
+ */
+
+const options = {
+  key: fs.readFileSync(__dirname + '/server.key'), //__dirname points to the current directory (the bin dir)
+  cert: fs.readFileSync(__dirname + '/server.cert'),
+};
+
+// configuring server, passing in the private key and cert
+const secureServer = https.createServer(options, app);
+
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+
+secureServer.listen(app.get('secPort'), () => {
+  console.log('Server listening on port ', app.get('secPort'));
+});
+secureServer.on('error', onError);
+secureServer.on('listening', onListening);
 
 /**
  * Normalize a port into a number, string, or false.
@@ -58,9 +86,7 @@ function onError(error) {
     throw error;
   }
 
-  var bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
+  var bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port;
 
   // handle specific listen errors with friendly messages
   switch (error.code) {
@@ -83,8 +109,6 @@ function onError(error) {
 
 function onListening() {
   var addr = server.address();
-  var bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr.port;
+  var bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
   debug('Listening on ' + bind);
 }

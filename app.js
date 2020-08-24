@@ -28,6 +28,17 @@ connect.then(
 
 var app = express();
 
+// Secure traffic only, catching any request (.all) with any path ('*')
+app.all('*', (req, res, next) => {
+  // .secure is set automatically to true by express when connection is sent through https
+  if (req.secure) {
+    return next();
+  } else {
+      console.log(`Redirecting to: https://${req.hostname}:${app.get('secPort')}${req.url}`);
+      res.redirect(301, `https://${req.hostname}:${app.get('secPort')}${req.url}`);
+  }
+});
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
