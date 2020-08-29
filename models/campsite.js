@@ -17,7 +17,7 @@ const commentSchema = new Schema(
       required: true,
     },
     author: {
-      type: mongoose.Schema.Types.ObjectId, // storing a reference field through the user doc
+      type: mongoose.Schema.Types.ObjectId, // storing a reference field through the user doc with mongoose population
       ref: 'User'
     },
   },
